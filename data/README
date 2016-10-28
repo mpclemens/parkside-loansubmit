@@ -1,0 +1,17 @@
+The code expects two database files:
+
+loansubmit.db    the "production" db
+loansubmit_t.db  the test db
+
+setup_schema.sql cerates the tables expected -- it's destructive, so
+be careful!
+
+Set up the databases from scratch with:
+
+sh$ sqlite3 loansubmit_t.db
+sqlite> .read setup_schema.sql
+sqlite> .quit
+
+sh$ sqlite3 loansubmit.db
+sqlite> .read setup_schema.sql
+sqlite> .quit
