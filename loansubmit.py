@@ -22,10 +22,106 @@ def close_connection(exception):
         db.close()
 
 # API handlers
-        
-@app.route("/new/", methods = ['POST']) # accept payer_ssn, prop_val, loan_val
+
+@app.route("/new/", methods = ['GET','POST'])
 def cmd_new():
-    pass
+    db = get_db()
+    loan = Loan(None, None, None)
+
+    errors = []
+    reply = {}
+
+    # three parameters are required: payer_ssn, prop_value, and loan_value
+
+    # payer_ssn
+    #
+    if 'payer_ssn' not in request.args:
+        errors.append({"field": "payer_ssn",
+                       "message": "Must supply payer_ssn in request"})
+    else:
+        try:
+            raw = request.args['payer_ssn']
+            loan.payer_ssn = raw.strip()
+            loan.validate_payer_ssn()
+        except FormatSSNError as e:
+            errors.append({"field": "payer_ssn",
+                           "message": "Format payer_ssn as ###-##-####"})
+        except InvalidSSNError as e:
+            errors.append({"field": "payer_ssn",
+                           "message": "Invalid payer_ssn value"})
+
+    # prop_value
+    #
+    if 'prop_value' not in request.args:
+        errors.append({"field": "prop_value",
+                       "message": "Must supply prop_value in request"})
+    else:
+        try:
+            raw = request.args['prop_value']
+            raw = raw.strip()
+
+            if raw.isdigit():
+                loan.prop_value = int(raw)
+            else:
+                loan.prop_value = 0
+
+            loan.validate_prop_value()
+        except InvalidPropertyValueError as e:
+            errors.append({"field": "prop_value",
+                           "message": "Invalid prop_value, must be integer > 0"})
+
+    # loan_value
+    #
+    if 'loan_value' not in request.args:
+        errors.append({"field": "loan_value",
+                       "message": "Must supply loan_value in request"})
+    else:
+        try:
+            raw = request.args['loan_value']
+            raw = raw.strip()
+
+            if raw.isdigit():
+                loan.loan_value = int(raw)
+            else:
+                loan.loan_value = 0
+
+            loan.validate_loan_value()
+        except InvalidLoanValueError as e:
+            errors.append({"field": "loan_value",
+                           "message": "Invalid loan_value, must be integer > 0"})
+
+
+    # loan-to-value check
+    #
+    # not a fatal error, just an automatic denial
+
+    if loan.prop_value and loan.loan_value:
+        try:
+            loan.validate_ltv()
+        except ExcessLoanToValueError as e:
+            loan.loan_status = "Denied"
+            reply['message'] = "Loan-to-value exceeds limit, loan is Denied"
+            loan.save(db)
+        else:
+            loan.loan_status = "Accepted"
+            reply['message'] = "Loan is Accepted"
+            loan.save(db)
+
+
+    if len(errors):
+        reply['errors'] = errors
+        reply['status'] = 404
+        reply['message'] = 'Command failed: new'
+    else:
+        reply['status'] = 200
+        reply['loan'] = loan.to_jsonable()
+
+
+    resp = jsonify(reply)
+    resp.status_code = reply['status']
+
+    return resp
+
 
 @app.route("/find/<int:loan_id>", methods = ['GET','PUT'])
 def cmd_find(loan_id):
@@ -35,16 +131,16 @@ def cmd_find(loan_id):
 
     errors = []
     reply = {}
-    
+
     if loan.payer_ssn is None:
         reply['status'] = 404
-        reply['message'] = 'command failed: find ' + str(loan_id)
+        reply['message'] = 'Command failed: find ' + str(loan_id)
         errors.append({"field": "loan_id",
                        "message": "Could not find a loan with that id"})
     else:
         reply['status'] = 200
         reply['message'] = 'command succeeded: find ' + str(loan_id)
-        reply['loan'] = loan.__dict__ # not very elegant
+        reply['loan'] = loan.to_jsonable()
 
     if len(errors):
         reply['errors'] = errors
@@ -53,54 +149,65 @@ def cmd_find(loan_id):
     resp.status_code = reply['status']
 
     return resp
-        
-        
-@app.route("/edit/<int:loan_id>", methods = ['POST']) # accept loan_status text
-def cmd_edit():
+
+
+@app.route("/edit/<int:loan_id>", methods = ['GET','POST'])
+def cmd_edit(loan_id):
     db = get_db()
     loan = Loan(None, None, None, loan_id = loan_id)
     loan.load(db)
 
     errors = []
     reply = {}
-    
+
+    # bad id, loan not found
+    #
     if loan.payer_ssn is None:
         reply['status'] = 404
-        reply['message'] = 'command failed: edit ' + str(loan_id)
+        reply['message'] = 'Command failed: edit ' + str(loan_id)
         errors.append({"field": "loan_id",
                        "message": "Could not find a loan with that id"})
 
+        reply['errors'] = errors
         resp = jsonify(reply)
         resp.status_code = reply['status']
 
         return resp
 
-    # validate the new status (with some cleanup)
-    
+    # no status passed
+    #
     if 'loan_status' not in request.args:
         reply['status'] = 404
-        reply['message'] = 'command failed: edit ' + str(loan_id)
-        errors.append({"field": "loan_id",
-                       "message": "Could not find a loan with that id"})
+        reply['message'] = 'Command failed: edit ' + str(loan_id)
+        errors.append({"field": "loan_status",
+                       "message": "Must supply loan_status in request"})
 
+        reply['errors'] = errors
         resp = jsonify(reply)
         resp.status_code = reply['status']
 
         return resp
 
+    # cleanup/check passed status and apply
+    #
+    raw = request.args['loan_status']
+    raw = raw.strip().title()
+    loan.loan_status = raw
 
-
-        
-        raw = request.args['loan_status']
-        raw = raw.strip().title()
+    try:
         loan.validate_loan_status()
-    
+        loan.save(db)
+    except InvalidLoanStatusError as e:
+        reply['status'] = 404
+        reply['message'] = 'Command failed: edit ' + str(loan_id)
 
+        errors.append({"field": "loan_status",
+                       "message": "Legal values: New, Approved, Denied, Review"})
 
-        
+    else:
         reply['status'] = 200
-        reply['message'] = 'command succeeded: find ' + str(loan_id)
-        reply['loan'] = loan.__dict__ # not very elegant
+        reply['message'] = 'command succeeded: edit ' + str(loan_id)
+        reply['loan'] = loan.to_jsonable()
 
     if len(errors):
         reply['errors'] = errors
