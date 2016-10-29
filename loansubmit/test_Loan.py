@@ -163,6 +163,15 @@ class Test_Loan(unittest.TestCase):
 
         db.close()
 
+    # 
+        
+    def test_to_jsonable(self):
+        LOAN1 = Loan("123-45-6789", 12345, 67890, 987)
+        LOAN1.loan_status = "New"
+
+        # just making sure this executes, don't need to check that json package works
+        encode_me = LOAN1.to_jsonable()
+        self.assertTrue(len(encode_me) > 0,"JSON encoding should exist")
 #
 
 if __name__ == '__main__':

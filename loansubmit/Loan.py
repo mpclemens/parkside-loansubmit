@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 """Simple load object representation"""
 
-import re # for checking the SSN format
+import re   # for checking the SSN format
 
 ### custom exceptions
 
@@ -126,3 +126,7 @@ class Loan:
 
             conn.commit()
 
+
+    def to_jsonable(self):
+        """Return the instance as a JSON-encodeable sructure"""
+        return self.__dict__
