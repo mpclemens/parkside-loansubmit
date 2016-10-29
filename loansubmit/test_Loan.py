@@ -35,7 +35,7 @@ class Test_Loan(unittest.TestCase):
 
     #
 
-    def test_validation(self):
+    def test_ssn_validation(self):
         LOAN1 = Loan(None, None, None)
 
         # SSN should look like AAA-GG-SSSS where A/G/S are 0-9...
@@ -43,58 +43,74 @@ class Test_Loan(unittest.TestCase):
         for ssn in ("1234", "foo", "123456789", "329487240948372039487231", None):
             LOAN1.payer_ssn = ssn
             with self.assertRaises(FormatSSNError) as context:
-                LOAN1.validate()
+                LOAN1.validate_payer_ssn()
 
         # ...except A cannot be 000, 666, or any 9xx
         #
         for ssn in ("000-12-3456","666-77-8888","900-12-6473","999-12-6473"):
             LOAN1.payer_ssn = ssn
             with self.assertRaises(InvalidSSNError) as context:
-                LOAN1.validate()
+                LOAN1.validate_payer_ssn()
 
-        LOAN1.payer_ssn = "888-99-1234"
 
-        # property value
-        #
+    def test_property_value_validation(self):
+        LOAN1 = Loan(None, None, None)
+
         for amt in (0, -10, None):
             LOAN1.prop_value = amt
             with self.assertRaises(InvalidPropertyValueError) as context:
-                LOAN1.validate()
+                LOAN1.validate_prop_value()
 
-        LOAN1.prop_value = 5000
+    #
 
-        # loan value
-        #
+    def test_loan_value_validation(self):
+        LOAN1 = Loan(None, None, None)
+
         for amt in (0, -10, None):
             LOAN1.loan_value = amt
             with self.assertRaises(InvalidLoanValueError) as context:
-                LOAN1.validate()
+                LOAN1.validate_loan_value()
+
+    #
+
+    def test_ltv_validation(self):
+        LOAN1 = Loan(None, None, None)
+
+        LOAN1.prop_value = 5000
 
         # 100% loan amount, too high!
         #
         LOAN1.loan_value = LOAN1.prop_value
 
         with self.assertRaises(ExcessLoanToValueError) as context:
-            LOAN1.validate()
-
+            LOAN1.validate_ltv()
 
         # 50% loan amount, still too much
         #
         LOAN1.loan_value = LOAN1.prop_value * 0.5
 
         with self.assertRaises(ExcessLoanToValueError) as context:
-            LOAN1.validate()
+            LOAN1.validate_ltv()
 
         # 40% loan amount is the cap
         #
         LOAN1.loan_value = LOAN1.prop_value * 0.4
-        LOAN1.validate()
+        LOAN1.validate_ltv()
 
         # And lower is OK, too
         #
         LOAN1.loan_value = LOAN1.prop_value * 0.1
-        LOAN1.validate()
+        LOAN1.validate_ltv()
 
+    #
+
+    def test_status_validation(self):
+        LOAN1 = Loan(None, None, None)
+
+        for txt in ("Bad", "FOO", "Invalid", "approved", None):
+            LOAN1.loan_status = txt
+            with self.assertRaises(InvalidLoanStatusError) as context:
+                LOAN1.validate_loan_status()
 
     #
 

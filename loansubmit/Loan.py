@@ -20,6 +20,9 @@ class InvalidPropertyValueError(Exception):
 class ExcessLoanToValueError(Exception):
     pass
 
+class InvalidLoanStatusError(Exception):
+    pass
+
 ###
 
 class Loan:
@@ -42,9 +45,7 @@ class Loan:
         self.loan_id     = loan_id
 
 
-    def validate(self):
-        """More rigorous checking of the loan data than the basic UI validation"""
-
+    def validate_payer_ssn(self):
         if self.payer_ssn is None or self._SSN_RE.match(self.payer_ssn) is None:
             raise FormatSSNError
 
@@ -75,15 +76,22 @@ class Loan:
         if self.payer_ssn[0:3] in ("000","666"):
             raise InvalidSSNError
 
+
+    def validate_prop_value(self):
         if self.prop_value <= 0:
             raise InvalidPropertyValueError
 
+    def validate_loan_value(self):
         if self.loan_value <= 0:
             raise InvalidLoanValueError
 
-        if self.loan_value/self.prop_value > self._MAX_LTV:
+    def validate_ltv(self):
+        if 1.0*self.loan_value/self.prop_value > self._MAX_LTV:
             raise ExcessLoanToValueError
 
+    def validate_loan_status(self):
+        if self.loan_status not in ("New","Approved","Denied","Review"):
+            raise InvalidLoanStatusError
 
     def save(self, conn):
         """Store the loan to the given database connection"""
@@ -117,3 +125,4 @@ class Loan:
                 self.payer_ssn, self.prop_value, self.loan_value, self.loan_status = row
 
             conn.commit()
+
