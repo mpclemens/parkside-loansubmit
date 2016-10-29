@@ -3,54 +3,57 @@ Simple loan submission/lookup class and interfaces into it.
 REQUIREMENTS:
 =============
 
-    sqlite3    (not sqlite2!)
-    python2.7
+sqlite3    (not sqlite2!)
+python2.7
+python-flask
 
-    The command-line UI runs in pure Python using standard libraries
+The command-line UI runs in pure Python using standard libraries
 
-    The REST API runs as a Flask app
+The REST API runs as a Flask app
 
-    Both use the classes in parkside-loansubmit/loansubmit/Loan.py
-    which implement the actual logic to validate and interact with the
-    db, and have custom exceptions for validation failures
+Both use the classes in parkside-loansubmit/loansubmit/Loan.py
+which implement the actual logic to validate and interact with the
+db, and have custom exceptions for validation failures
 
-    I used a virtual environment locally for development. If you don't
-    want to install Flask in your normal library path, setting up a
-    virtual env is largely painless:
+VIRTUAL ENV:
+============
 
-    Using your system's package manager, make sure you have these
-    installled as an administrative user:
+I used a virtual environment locally for development. If you don't
+want to install Flask in your normal library path, setting up a
+virtual env is largely painless.
 
-    python-pip
-    python-virtualenv
+Using your system's package manager, make sure you have these
+installled as an administrative user:
 
-    As a normal user account, create the virtual environment:
+python-pip
+python-virtualenv
 
-    virtualenv parkside-loansubmit/env
+As a normal user account, create the virtual environment:
 
-    ...and then start it up.
+virtualenv parkside-loansubmit/env
 
-    source parkside-loansubmit/env/bin/activate
+...and then start it up.
 
-    The "(env) " identifier appears before my shell prompt while the
-    virtual env is running.
+source parkside-loansubmit/env/bin/activate
 
-    While the virtual environment is running, try:
+The "(env) " identifier appears before my shell prompt while the
+virtual env is running.
 
-    pip install Flask
+While the virtual environment is running, try:
 
-    or
+pip install Flask
 
-    pip install -r requirements.txt
+or
 
-    ...to install the necessary packages for the RESTful API.
+pip install -r requirements.txt
 
-    Type:
-    
-    deactivate
+...to install the necessary packages for the RESTful API.
 
-    ...to leave the virtual env.
+Type:
 
+deactivate
+
+...to leave the virtual env.
 
 INTERFACES:
 ===========
@@ -64,20 +67,19 @@ the database (loansubmit_t.db)
 cd parkside-loansubmit/loansubmit/
 python test_Loan.py
 
-
 Interactive CLI:
 ----------------
 
 python parkside-loansubmit/loansubmit-cli.py
 
-  Pure Python 2.7 interactive CLI for the loansubmit/Loan.py class.
+Pure Python 2.7 interactive CLI for the loansubmit/Loan.py class.
 
-  Commands are: help, add, edit, find, quit
-
+Commands are: help, add, edit, find, quit
 
 JSON App:
 ---------
 
+source parkside-loansubmit/env/bin/activate  (to run the virtual env)
 python parkside-loansubmit/loansubmit.py
 
 On my machine, this starts Flask on localhost port 5000
