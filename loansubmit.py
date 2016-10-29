@@ -23,8 +23,21 @@ def close_connection(exception):
 
 # API handlers
 
+@app.errorhandler(404)
+def not_found(error=None):
+    reply = {
+        'status': 404,
+        'message': 'Command not found: ' + request.url,
+    }
+    resp = jsonify(reply)
+    resp.status_code = reply['status']
+
+    return resp
+
+
 @app.route("/new/", methods = ['GET','POST'])
 def cmd_new():
+    """/new command establishes a new loan given payer_ssn, prop_value, loan_value (GET or POST)"""
     db = get_db()
     loan = Loan(None, None, None)
 
@@ -125,6 +138,7 @@ def cmd_new():
 
 @app.route("/find/<int:loan_id>", methods = ['GET','PUT'])
 def cmd_find(loan_id):
+    """/find/<loan_id> command looks up the loan in the database and returns it if found (GET or PUT)"""
     db = get_db()
     loan = Loan(None, None, None, loan_id = loan_id)
     loan.load(db)
@@ -153,6 +167,7 @@ def cmd_find(loan_id):
 
 @app.route("/edit/<int:loan_id>", methods = ['GET','POST'])
 def cmd_edit(loan_id):
+    """/edit/<loan_id> accepts a new loan_status value (GET or POST)"""
     db = get_db()
     loan = Loan(None, None, None, loan_id = loan_id)
     loan.load(db)
