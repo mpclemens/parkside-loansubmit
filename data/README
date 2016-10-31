@@ -3,8 +3,9 @@ The code expects two database files:
 loansubmit.db    the "production" db
 loansubmit_t.db  the test db
 
-setup_schema.sql cerates the tables expected -- it's destructive, so
-be careful!
+setup_schema.sql creates the tables expected -- it's destructive, so
+be careful! Be sure to use sqlite3 (on my system, 'sqlite' by itself 
+is version 2.x)
 
 Set up the databases from scratch with:
 
